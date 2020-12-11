@@ -1,8 +1,13 @@
 package eu.stratosphere.core.fs;
 
+import eu.stratosphere.utils.ClassUtils;
+import eu.stratosphere.utils.OperatingSystem;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author ：yanpengfei
@@ -41,6 +46,63 @@ public abstract class FileSystem {
         FSDIRECTORY.put("file", LOCAL_FILESYSTEM_CLASS);
         FSDIRECTORY.put("s3", S3_FILESYSTEM_CLASS);
     }
+
+    public static FileSystem getLocalFileSystem() throws IOException {
+        URI uri = null;
+        try {
+            uri = OperatingSystem.isWindows() ? new URI("file:/") : new URI("file:///");
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
+        return get(uri);
+    }
+
+    private static FileSystem get(URI uri) throws IOException {
+
+        if (uri == null) {
+            throw new IOException("No file system found with scheme " + uri.getScheme());
+        }
+        FileSystem fs = null;
+        synchronized (SYNCHRONIZATION_OBJECT) {
+            FSKey fsKey = new FSKey(uri.getScheme(), uri.getAuthority());
+            if (CACHE.containsKey(fsKey)) {
+                return CACHE.get(fsKey);
+            }
+            // Try to create a new file system
+            if (!FSDIRECTORY.containsKey(uri.getScheme())) {
+                throw new IOException("No file system found with scheme " + uri.getScheme());
+            }
+
+            Class<? extends FileSystem> clazz = null;
+
+            try {
+                clazz = ClassUtils.getFileSystemByName(FSDIRECTORY.get(uri.getScheme()));
+            } catch (ClassNotFoundException e) {
+               throw new RuntimeException(e.getMessage());
+            }
+
+            try {
+                fs = clazz.newInstance();
+                fs.initialize(uri);
+                CACHE.put(fsKey, fs);
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return fs;
+    }
+
+    protected abstract void initialize(URI uri);
+
+
+    public abstract Path getWorkingDirectory();
+
+    public abstract URI getUri();
+
 
 
 }
