@@ -3,6 +3,8 @@ package eu.stratosphere.core.fs;
 import eu.stratosphere.utils.ClassUtils;
 import eu.stratosphere.utils.OperatingSystem;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -79,7 +81,7 @@ public abstract class FileSystem {
             try {
                 clazz = ClassUtils.getFileSystemByName(FSDIRECTORY.get(uri.getScheme()));
             } catch (ClassNotFoundException e) {
-               throw new RuntimeException(e.getMessage());
+                throw new RuntimeException(e.getMessage());
             }
 
             try {
@@ -103,6 +105,62 @@ public abstract class FileSystem {
 
     public abstract URI getUri();
 
+    public abstract FileStatus getFileStatus(Path f) throws FileNotFoundException;
+
+    public abstract BlockLocation[] getFileBlockLocations(FileStatus file, long start, long len) throws IOException;
+
+    public abstract FSDataInputStream open(Path f, int bufferSize) throws IOException;
+
+    public abstract FSDataInputStream open(Path f) throws IOException;
+
+    public long getDefaultBlockSize() {
+        return 32 * 1024 * 1024; //32Mb
+    }
+
+    public abstract FileStatus[] listStatus(Path f) throws IOException;
+
+    public boolean exists(Path f) throws IOException {
+        try {
+            return getFileStatus(f) != null;
+        } catch (FileNotFoundException e) {
+            return false;
+        }
+    }
 
 
+    public abstract boolean mkdirs(Path f) throws IOException;
+
+    public abstract FSDataOutputStream create(Path f, boolean overwrite, int bufferSize, short replication,
+                                              long blockSize) throws IOException;
+
+    public abstract FSDataOutputStream create(Path f, boolean overwrite) throws IOException;
+
+    public abstract boolean rename(Path src, Path dst) throws IOException;
+
+    public abstract boolean delete(Path f, boolean recursive) throws IOException;
+
+    public long getNumberOfBlocks(final FileStatus file) throws IOException {
+        int numberOfBlocks = 0;
+        if (file == null) {
+            return 0;
+        }
+        if (!file.iDir()) {
+            return getNumberOfBlocks(file.getLen(), file.getBlockSize());
+        }
+
+        FileStatus[] files = this.listStatus(file.getPath());
+        for (FileStatus f : files) {
+            numberOfBlocks += getNumberOfBlocks(f.getLen(), f.getBlockSize());
+        }
+
+        return numberOfBlocks;
+    }
+
+    private long getNumberOfBlocks(final long length, final long blocksize) {
+        if (blocksize != 0) {
+            return (length + blocksize - 1) / blocksize;
+        }
+
+        return 1;
+    }
 }

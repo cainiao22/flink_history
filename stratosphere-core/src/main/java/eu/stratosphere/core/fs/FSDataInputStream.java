@@ -10,5 +10,5 @@ import java.io.InputStream;
  */
 public abstract class FSDataInputStream extends InputStream {
 
-    public abstract void seek(int desired) throws IOException;
+    public abstract void seek(long desired) throws IOException;
 }

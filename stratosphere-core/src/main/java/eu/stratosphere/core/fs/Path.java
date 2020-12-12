@@ -1,6 +1,8 @@
 package eu.stratosphere.core.fs;
 
+import eu.stratosphere.core.fs.local.LocalFileSystem;
 import eu.stratosphere.core.io.StringRecord;
+import eu.stratosphere.utils.OperatingSystem;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -12,7 +14,7 @@ import java.net.URISyntaxException;
 /**
  * @author ：yanpengfei
  * @date ：2020/12/9 10:47 上午
- * @description：
+ * @description： 这个path 相当于通常意义下的文件或文件夹了
  */
 public class Path implements IOReadableWritable, Serializable {
 
@@ -29,6 +31,49 @@ public class Path implements IOReadableWritable, Serializable {
     public Path(String schema, String authority, String path) {
         checkPathArg(path);
         initialize(schema, authority, path);
+    }
+
+    public Path(String pathString) {
+        checkPathArg(pathString);
+        if (hasWindowDriver(pathString, false)) {
+            pathString += "/";
+        }
+        String scheme = null;
+        String authority = null;
+
+        int start = 0;
+        // parse uri scheme, if any
+        final int colon = pathString.indexOf(':');
+        final int slash = pathString.indexOf('/');
+        //完整uri 示例 http://username:password@host:8080/directory/file?query#fragment
+        if (colon != -1 && (slash == -1 || slash > colon)) {
+            scheme = pathString.substring(0, colon);
+            start = colon + 1;
+        }
+
+        if (pathString.startsWith("//", start) && pathString.length() - start > 2) {
+            final int nextSlash = pathString.indexOf('/', start + 2);
+            final int authEnd = nextSlash > 0 ? nextSlash : pathString.length();
+            authority = pathString.substring(start + 2, authEnd);
+            start = authEnd;
+        }
+
+        final String path = pathString.substring(start, pathString.length());
+
+        initialize(scheme, authority, path);
+    }
+
+    private boolean hasWindowDriver(String path, boolean slashed) {
+        if (!OperatingSystem.isWindows()) {
+            return false;
+        }
+        int start = slashed ? 1 : 0;
+
+        return path.length() >= start + 2
+                && (slashed ? path.charAt(0) == '/' : true)
+                && path.charAt(start + 1) == ':'
+                && ((path.charAt(start) >= 'A' && path.charAt(start) <= 'Z') || (path.charAt(start) >= 'a' && path
+                .charAt(start) <= 'z'));
     }
 
     private void initialize(String schema, String authority, String path) {
@@ -48,6 +93,10 @@ public class Path implements IOReadableWritable, Serializable {
         path = path.replace("\\", SEPARATOR);
 
         return path;
+    }
+
+    public Path(Path parent, String child) {
+        this(parent, new Path(child));
     }
 
     public Path(Path parent, Path child) {
@@ -112,5 +161,61 @@ public class Path implements IOReadableWritable, Serializable {
             StringRecord.writeString(out, uri.getQuery());
             StringRecord.writeString(out, uri.getFragment());
         }
+    }
+
+    public boolean isAbsolute() {
+        int start = OperatingSystem.isWindows() ? 3 : 0;
+        return this.uri.getPath().startsWith(SEPARATOR, start);
+    }
+
+    public Path makeQualified(FileSystem fs) {
+        Path path = this;
+        if (!isAbsolute()) {
+            path = new Path(fs.getWorkingDirectory(), this);
+        }
+
+        URI pathUri = path.uri;
+
+        String scheme = path.uri.getScheme();
+        String authority = path.uri.getAuthority();
+
+        if (scheme != null && (authority != null || fs.getUri().getAuthority() == null)) {
+            return path;
+        }
+        if (scheme == null) {
+            scheme = fs.getUri().getScheme();
+        }
+        if (authority == null) {
+            if (fs.getUri().getAuthority() != null) {
+                authority = fs.getUri().getAuthority();
+            } else {
+                authority = "";
+            }
+        }
+
+        return new Path(scheme + ":" + "//" + authority + pathUri.getPath());
+    }
+
+    public URI toUri() {
+        return this.uri;
+    }
+
+    public Path getParent() {
+        String path = uri.getPath();
+        int lastSlash = path.lastIndexOf(SEPARATOR_CHAR);
+        int start = hasWindowDriver(path, true) ? 3 : 0;
+        if (path.length() == start ||
+                (lastSlash == start && path.length() == start + 1)) {
+            return null;
+        }
+
+        String parent;
+        if (lastSlash == -1) {
+            parent = CUR_DIR;
+        } else {
+            final int end = hasWindowDriver(path, true) ? 3 : 0;
+            parent = path.substring(0, lastSlash == end ? end + 1 : lastSlash);
+        }
+        return new Path(uri.getScheme(), uri.getAuthority(), parent);
     }
 }
