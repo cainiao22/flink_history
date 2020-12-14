@@ -1,6 +1,7 @@
 package eu.stratosphere.core.memory;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class MemorySegment {
 
@@ -84,13 +85,42 @@ public class MemorySegment {
         this.memory[index + 1] = (byte) value;
     }
 
-    public final short getShort(int index){
+    public final short getShort(int index) {
         return (short) (this.memory[index] & 0xff << 8 | this.memory[index + 1]);
     }
 
-    public final void putShort(int index, short value){
+    public final void putShort(int index, short value) {
         this.memory[index] = (byte) (value >> 8);
         this.memory[index + 1] = (byte) value;
     }
 
+    public final int getInt(int index) {
+        if (CHECKED) {
+            if (index < memory.length - 4) {
+                return MemoryUtils.UNSAFE.getInt(memory, BASE_OFFSET + index);
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
+        }
+        return MemoryUtils.UNSAFE.getInt(memory, BASE_OFFSET + index);
+    }
+
+    public final int getIntLittleEndian(int index){
+        if(LITTLE_ENDIAN){
+            return get(index);
+        }
+        return Integer.reverseBytes(get(index));
+    }
+
+    public final int getIntBigEndian(int index){
+        if(LITTLE_ENDIAN){
+            return Integer.reverseBytes(get(index));
+        }
+        return get(index);
+    }
+
+
+    private static final int BASE_OFFSET = MemoryUtils.UNSAFE.arrayBaseOffset(byte[].class);
+
+    private static final boolean LITTLE_ENDIAN = MemoryUtils.NATIVE_BYTE_ORDER == ByteOrder.LITTLE_ENDIAN;
 }
