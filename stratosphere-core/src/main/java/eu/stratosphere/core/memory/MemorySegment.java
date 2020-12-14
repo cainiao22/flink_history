@@ -1,5 +1,8 @@
 package eu.stratosphere.core.memory;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -105,20 +108,178 @@ public class MemorySegment {
         return MemoryUtils.UNSAFE.getInt(memory, BASE_OFFSET + index);
     }
 
-    public final int getIntLittleEndian(int index){
-        if(LITTLE_ENDIAN){
+    public final int getIntLittleEndian(int index) {
+        if (LITTLE_ENDIAN) {
             return get(index);
         }
         return Integer.reverseBytes(get(index));
     }
 
-    public final int getIntBigEndian(int index){
-        if(LITTLE_ENDIAN){
+    public final int getIntBigEndian(int index) {
+        if (LITTLE_ENDIAN) {
             return Integer.reverseBytes(get(index));
         }
         return get(index);
     }
 
+    public final void putInt(int index, int value) {
+        if (CHECKED) {
+            if (index < memory.length - 4) {
+                MemoryUtils.UNSAFE.putInt(memory, BASE_OFFSET + index, value);
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
+        }
+        MemoryUtils.UNSAFE.putInt(memory, BASE_OFFSET + index, value);
+    }
+
+    public final void putIntLittleEndian(int index, int value) {
+        if (LITTLE_ENDIAN) {
+            putInt(index, value);
+        } else {
+            putInt(index, Integer.reverseBytes(value));
+        }
+    }
+
+    public final void putIntBigEndian(int index, int value) {
+        if (!LITTLE_ENDIAN) {
+            putInt(index, value);
+        } else {
+            putInt(index, Integer.reverseBytes(value));
+        }
+    }
+
+    public final long getLong(int index) {
+        if (CHECKED) {
+            if (index < memory.length - 8) {
+                return MemoryUtils.UNSAFE.getLong(memory, BASE_OFFSET + index);
+            }
+            throw new IndexOutOfBoundsException();
+        }
+        return MemoryUtils.UNSAFE.getLong(memory, BASE_OFFSET + index);
+    }
+
+    public final long getLongLittleEndian(int index) {
+        if (LITTLE_ENDIAN) {
+            return getLong(index);
+        }
+        return Long.reverseBytes(getLong(index));
+    }
+
+    public final long getLongBigEndian(int index) {
+        if (!LITTLE_ENDIAN) {
+            return getLong(index);
+        }
+        return Long.reverseBytes(getLong(index));
+    }
+
+    public final void putLong(int index, long value) {
+        if (CHECKED) {
+            if (index < memory.length - 8) {
+                MemoryUtils.UNSAFE.putLong(memory, BASE_OFFSET + index, value);
+            } else {
+                throw new IndexOutOfBoundsException();
+            }
+        }
+        MemoryUtils.UNSAFE.putLong(memory, BASE_OFFSET + index, value);
+    }
+
+    public final void putLongLittleEndian(int index, long value) {
+        if (LITTLE_ENDIAN) {
+            putLong(index, value);
+        } else {
+            putLong(index, Long.reverseBytes(value));
+        }
+    }
+
+    public final void putLongBigEndian(int index, long value) {
+        if (LITTLE_ENDIAN) {
+            putLong(index, Long.reverseBytes(value));
+        } else {
+            putLong(index, value);
+        }
+    }
+
+    public final float getFloat(int index) {
+        return Float.intBitsToFloat(getInt(index));
+    }
+
+    public final float getFloatLittleEndian(int index) {
+        return Float.intBitsToFloat(getIntLittleEndian(index));
+    }
+
+    public final float getFloatBigEndian(int index) {
+        return Float.intBitsToFloat(getIntBigEndian(index));
+    }
+
+    public final void putFloat(int index, float value) {
+        putInt(index, Float.floatToRawIntBits(value));
+    }
+
+    public final void putFloatLittleEndian(int index, float value) {
+        putIntLittleEndian(index, Float.floatToRawIntBits(value));
+    }
+
+    public final void putFloatBigEndian(int index, float value) {
+        putIntBigEndian(index, Float.floatToRawIntBits(value));
+    }
+
+    public final double getDouble(int index) {
+        return Double.longBitsToDouble(getLong(index));
+    }
+
+    public final double getDoubleLittleEndian(int index) {
+        return Double.longBitsToDouble(getLongLittleEndian(index));
+    }
+
+    public final double getDoubleBigEndian(int index) {
+        return Double.longBitsToDouble(getLongBigEndian(index));
+    }
+
+    public final void putDouble(int index, double value) {
+        putLong(index, Double.doubleToRawLongBits(value));
+    }
+
+    public final void putDoubleLittleEndian(int index, double value) {
+        putLongLittleEndian(index, Double.doubleToRawLongBits(value));
+    }
+
+    public final void putDoubleBigEndian(int index, double value) {
+        putLongBigEndian(index, Double.doubleToRawLongBits(value));
+    }
+
+    public final void get(DataOutput out, int offset, int length) throws IOException {
+        out.write(memory, offset, length);
+    }
+
+    public final void put(DataInput in, int offset, int length) throws IOException {
+        in.readFully(memory, offset, length);
+    }
+
+    public void get(int offset, ByteBuffer target, int numBytes) {
+        target.get(memory, offset, numBytes);
+    }
+
+    public void put(int offset, ByteBuffer source, int numBytes) {
+        source.get(memory, offset, numBytes);
+    }
+
+    public final void copyTo(int offset, MemorySegment target, int targetOffset, int numBytes) {
+        System.arraycopy(this.memory, offset, target.memory, targetOffset, numBytes);
+    }
+
+    public static int compare(MemorySegment seg1, MemorySegment seg2, int offset1, int offset2, int len) {
+        int var = 0;
+        for (int i = 0; i < len && (var = seg1.get(offset1 + i) & 0xff - seg2.get(offset2 + i) & 0xff) == 0; i++) ;
+        return var;
+    }
+
+    public static final void swapBytes(MemorySegment seg1, MemorySegment seg2, byte[] tempBuffer, int offset1, int offset2, int len) {
+        // system arraycopy does the boundary checks anyways, no need to check extra
+        System.arraycopy(seg1.memory, offset1, tempBuffer, 0, len);
+        System.arraycopy(seg2.memory, offset2, seg1.memory, offset1, len);
+        System.arraycopy(tempBuffer, 0, seg2.memory, offset2, len);
+    }
 
     private static final int BASE_OFFSET = MemoryUtils.UNSAFE.arrayBaseOffset(byte[].class);
 
