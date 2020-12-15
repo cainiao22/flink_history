@@ -39,4 +39,27 @@ public class Configuration implements IOReadableWritable {
             }
         }
     }
+
+    public void setString(String key, String value) {
+        setStringInternal(key, value);
+    }
+
+    private void setStringInternal(String key, String value) {
+        if (key == null)
+            throw new NullPointerException("Key must not be null.");
+        if (value == null)
+            throw new NullPointerException("Value must not be null.");
+
+        synchronized (this.confData) {
+            this.confData.put(key, value);
+        }
+    }
+
+    public void setInteger(String key, Integer value) {
+        setStringInternal(key, String.valueOf(value));
+    }
+
+    public void setBoolean(String key, Boolean value) {
+        setStringInternal(key, Boolean.toString(value));
+    }
 }
