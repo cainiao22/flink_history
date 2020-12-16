@@ -1,5 +1,6 @@
 package eu.stratosphere.api.common.operators.util;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -51,7 +52,7 @@ public class FieldSet implements Iterable<Integer> {
         return this.collection.contains(columnIndex);
     }
 
-    public int size(){
+    public int size() {
         return this.collection.size();
     }
 
@@ -60,8 +61,87 @@ public class FieldSet implements Iterable<Integer> {
         return this.collection.iterator();
     }
 
+    public FieldList toFieldList() {
+        int[] pos = toArray();
+        Arrays.sort(pos);
+        return new FieldList(pos);
+    }
+
+    public int[] toArray() {
+        int[] a = new int[collection.size()];
+        int i = 0;
+        for (Integer col : collection) {
+            a[i] = col;
+        }
+        return a;
+    }
+
+    public boolean isValidSubset(FieldSet sub) {
+        if (sub.size() > this.size()) {
+            return false;
+        }
+        //因为是iterator 所以可以直接增强for循环
+        for (Integer col : sub) {
+            if (this.collection.contains(col)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     protected Collection<Integer> initCollection() {
         return new HashSet<Integer>();
+    }
+
+    // --------------------------------------------------------------------------------------------
+
+
+    @Override
+    public int hashCode() {
+        return this.collection.hashCode();
+    }
+
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (obj instanceof FieldSet) {
+            return this.collection.equals(((FieldSet) obj).collection);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public FieldSet clone() {
+        FieldSet clone = new FieldSet();
+        clone.addAll(this.collection);
+        return clone;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder bld = new StringBuilder();
+        bld.append(getDescriptionPrefix());
+        for (Integer i : this.collection) {
+            bld.append(i);
+            bld.append(',');
+            bld.append(' ');
+        }
+        if (this.collection.size() > 0) {
+            bld.setLength(bld.length() - 2);
+        }
+        bld.append(getDescriptionSuffix());
+        return bld.toString();
+    }
+
+    protected String getDescriptionPrefix() {
+        return "(";
+    }
+
+    protected String getDescriptionSuffix() {
+        return ")";
     }
 }
