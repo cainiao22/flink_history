@@ -4,7 +4,7 @@ import eu.stratosphere.core.fs.IOReadableWritable;
 import java.io.Serializable;
 
 /**
- * TODO 类描述
+ * 累加器
  *
  * @author yanpengfei
  * @date 2020/12/18

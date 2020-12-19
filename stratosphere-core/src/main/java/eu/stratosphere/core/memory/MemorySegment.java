@@ -65,6 +65,11 @@ public class MemorySegment {
         System.arraycopy(src, index, this.memory, offset, length);
     }
 
+    public final void put(int index, byte b) {
+        this.memory[index] = b;
+    }
+
+
     public final boolean getBoolean(int index) {
         return this.memory[index] != 0;
     }

@@ -4,14 +4,18 @@ import java.nio.ByteOrder;
 import sun.misc.Unsafe;
 
 /**
- * @author ：yanpengfei
- * @date ：2020/12/14 9:57 上午
- * @description ：
+ * @author yanpengfei
+ * @date 2020/12/14 9:57 上午
+ * @description
  */
 public class MemoryUtils {
 
     public static sun.misc.Unsafe UNSAFE = Unsafe.getUnsafe();
     public static final ByteOrder NATIVE_BYTE_ORDER = getByteOrder();
+
+    static {
+
+    }
 
     private static ByteOrder getByteOrder(){
         byte[] bytes = new byte[8];

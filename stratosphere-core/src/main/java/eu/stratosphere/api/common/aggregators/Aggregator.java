@@ -3,7 +3,7 @@ package eu.stratosphere.api.common.aggregators;
 import eu.stratosphere.types.Value;
 
 /**
- * TODO 类描述
+ * 聚合器
  *
  * @author yanpengfei
  * @date 2020/12/18
