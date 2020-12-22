@@ -1,8 +1,6 @@
 package eu.stratosphere.api.common.distributions;
 
-import com.sun.jdi.IntegerValue;
 import eu.stratosphere.types.IntValue;
-import eu.stratosphere.types.Key;
 
 /**
  * 简单的Integer分布式数据集
