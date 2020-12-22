@@ -2,9 +2,11 @@ package eu.stratosphere.api.common.distributions;
 
 import eu.stratosphere.types.Key;
 
+import eu.stratosphere.utils.InstantiationUtil;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import org.graalvm.compiler.replacements.InstanceOfSnippetsTemplates.Instantiation;
 
 /**
  * 简易分布式数据
@@ -113,7 +115,27 @@ public class SimpleDistribution implements DataDistribution {
     public void read(DataInput input) throws IOException {
         this.dim = input.readInt();
         this.boundaries = new Key[input.readInt()][dim];
-        //for()
+
+        Class<? extends Key>[] types = new Class[dim];
+        for (int i = 0; i < dim; i++) {
+            String className = input.readUTF();
+            try {
+                types[i] = Class.forName(className, true, getClass().getClassLoader())
+                    .asSubclass(Key.class);
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Could not load type class '" + className + "'.");
+            } catch (Throwable t) {
+                throw new IOException("Error loading type class '" + className + "'.", t);
+            }
+        }
+
+        for (int i = 0; i < boundaries.length; i++) {
+            for (int d = 0; d < dim; d++) {
+                Key val = InstantiationUtil.instantiate(types[i], Key.class);
+                val.read(input);
+                boundaries[i][d] = val;
+            }
+        }
     }
 
     @Override
@@ -123,9 +145,9 @@ public class SimpleDistribution implements DataDistribution {
         for (int i = 0; i < dim; i++) {
             out.writeUTF(this.boundaries[0][i].getClass().getName());
         }
-        for (int i = 0; i < this.boundaries.length; i++) {
+        for (Key[] boundary : this.boundaries) {
             for (int j = 0; j < dim; j++) {
-                boundaries[i][j].write(out);
+                boundary[j].write(out);
             }
         }
     }

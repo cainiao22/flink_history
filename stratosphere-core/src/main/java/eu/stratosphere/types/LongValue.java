@@ -9,7 +9,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * TODO
+ * Long类型的包装类
  *
  * @author Administrator
  * @version 1.0
