@@ -38,6 +38,7 @@
 
     <modules>
         <module>stratosphere-core</module>
+      <module>stratosphere-java</module>
     </modules>
 
     <properties>

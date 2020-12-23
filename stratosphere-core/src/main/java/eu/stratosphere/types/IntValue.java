@@ -21,6 +21,10 @@ public class IntValue implements NormalizableKey, CopyableValue<IntValue> {
         this.value = 0;
     }
 
+    public IntValue(int value){
+        this.value = value;
+    }
+
     public int getValue() {
         return value;
     }

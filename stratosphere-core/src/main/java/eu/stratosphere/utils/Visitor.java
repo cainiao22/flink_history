@@ -7,7 +7,7 @@ package eu.stratosphere.utils;
  */
 public interface Visitor<T extends Visitable> {
 
-    void preVisit(T visitable);
+    boolean preVisit(T visitable);
 
     void postVisit(T visitable);
 
