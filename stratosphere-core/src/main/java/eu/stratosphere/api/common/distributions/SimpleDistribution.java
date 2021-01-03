@@ -1,12 +1,11 @@
 package eu.stratosphere.api.common.distributions;
 
 import eu.stratosphere.types.Key;
-
 import eu.stratosphere.utils.InstantiationUtil;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import org.graalvm.compiler.replacements.InstanceOfSnippetsTemplates.Instantiation;
 
 /**
  * 简易分布式数据

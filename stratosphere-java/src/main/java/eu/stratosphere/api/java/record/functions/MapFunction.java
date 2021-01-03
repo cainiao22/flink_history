@@ -6,15 +6,13 @@ import eu.stratosphere.types.Record;
 import eu.stratosphere.utils.Collector;
 
 /**
- * TODO 类描述
+ * map function
  *
  * @author yanpengfei
  * @date 2020/12/24
  **/
-public class MapFunction extends AbstractFunction implements GenericMapper<Record, Record> {
+public abstract class MapFunction extends AbstractFunction implements GenericMapper<Record, Record> {
 
     @Override
-    public void map(Record record, Collector<Record> out) throws Exception {
-
-    }
+    public abstract void map(Record record, Collector<Record> out) throws Exception;
 }
