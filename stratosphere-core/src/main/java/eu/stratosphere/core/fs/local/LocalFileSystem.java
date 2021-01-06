@@ -92,7 +92,7 @@ public class LocalFileSystem extends FileSystem {
         if (!localFile.exists()) {
             return null;
         }
-        if (localFile.isDirectory()) {
+        if (localFile.isFile()) {
             return new FileStatus[]{new LocalFileStatus(localFile, this)};
         }
         final String[] names = localFile.list();

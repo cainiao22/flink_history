@@ -45,10 +45,12 @@ public class Configuration implements IOReadableWritable {
     }
 
     private void setStringInternal(String key, String value) {
-        if (key == null)
+        if (key == null) {
             throw new NullPointerException("Key must not be null.");
-        if (value == null)
+        }
+        if (value == null) {
             throw new NullPointerException("Value must not be null.");
+        }
 
         synchronized (this.confData) {
             this.confData.put(key, value);
@@ -61,5 +63,35 @@ public class Configuration implements IOReadableWritable {
 
     public void setBoolean(String key, Boolean value) {
         setStringInternal(key, Boolean.toString(value));
+    }
+
+    public String getString(String key, String defaultValue) {
+        String value = getStringInternal(key);
+        return value == null ? defaultValue : value;
+    }
+
+    private String getStringInternal(String key) {
+        if (key == null) {
+            throw new NullPointerException("Key must not be null.");
+        }
+        synchronized (this.confData) {
+            return confData.get(key);
+        }
+    }
+
+    public int getInteger(String key, int defaultValue) {
+        String value = getStringInternal(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        return Integer.parseInt(value);
+    }
+
+    public long getLong(String key, long defaultValue) {
+        String value = getStringInternal(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        return Long.parseLong(value);
     }
 }

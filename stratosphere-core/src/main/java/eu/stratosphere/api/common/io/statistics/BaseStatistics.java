@@ -2,11 +2,11 @@ package eu.stratosphere.api.common.io.statistics;
 
 public interface BaseStatistics {
 
-    long SIZE_UNKNOW = -1;
+    long SIZE_UNKNOWN = -1;
 
-    long NUM_RECORDS_UNKNOW = -1;
+    long NUM_RECORDS_UNKNOWN = -1;
 
-    float AVG_RECORDS_UNKNOW = -1;
+    float AVG_RECORDS_UNKNOWN = -1.0f;
 
     long getTotalInputSize();
 

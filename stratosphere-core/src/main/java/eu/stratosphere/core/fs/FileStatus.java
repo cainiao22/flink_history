@@ -17,7 +17,7 @@ public interface FileStatus {
 
     long getAccessTime();
 
-    boolean iDir();
+    boolean isDir();
 
     Path getPath();
 

@@ -40,7 +40,7 @@ public abstract class FileSystem {
         }
     }
 
-    public static final Map<FSKey, FileSystem> CACHE = new HashMap<FSKey, FileSystem>();
+    public static final Map<FSKey, FileSystem> CACHE = new HashMap<>();
     public static final Map<String, String> FSDIRECTORY = new HashMap<String, String>();
 
     static {
@@ -60,7 +60,7 @@ public abstract class FileSystem {
         return get(uri);
     }
 
-    private static FileSystem get(URI uri) throws IOException {
+    public static FileSystem get(URI uri) throws IOException {
 
         if (uri == null) {
             throw new IOException("No file system found with scheme " + uri.getScheme());
@@ -144,7 +144,7 @@ public abstract class FileSystem {
         if (file == null) {
             return 0;
         }
-        if (!file.iDir()) {
+        if (!file.isDir()) {
             return getNumberOfBlocks(file.getLen(), file.getBlockSize());
         }
 

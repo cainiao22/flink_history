@@ -1,15 +1,14 @@
 package eu.stratosphere.core.fs;
 
-import eu.stratosphere.core.fs.local.LocalFileSystem;
-import eu.stratosphere.core.io.StringRecord;
-import eu.stratosphere.utils.OperatingSystem;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import eu.stratosphere.core.io.StringRecord;
+import eu.stratosphere.utils.OperatingSystem;
 
 /**
  * @author ：yanpengfei
@@ -27,6 +26,10 @@ public class Path implements IOReadableWritable, Serializable {
     public static final String CUR_DIR = ".";
 
     private URI uri;
+
+    public Path(){
+
+    }
 
     public Path(String schema, String authority, String path) {
         checkPathArg(path);
@@ -217,5 +220,11 @@ public class Path implements IOReadableWritable, Serializable {
             parent = path.substring(0, lastSlash == end ? end + 1 : lastSlash);
         }
         return new Path(uri.getScheme(), uri.getAuthority(), parent);
+    }
+
+    public String getName() {
+        String path = this.uri.getPath();
+        int slash = path.lastIndexOf(SEPARATOR);
+        return path.substring(slash + 1);
     }
 }
