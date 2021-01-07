@@ -170,9 +170,7 @@ public abstract class FileInputFormat<OT> implements InputFormat<OT, FileInputSp
         if (desiredSplits != -1) {
             if (desiredSplits == 0 || desiredSplits < -1) {
                 this.numSplits = -1;
-                if (LOG.isWarnEnabled()) {
-                    LOG.warn("Ignoring invalid parameter for number of splits: " + desiredSplits);
-                }
+                LOG.warn("Ignoring invalid parameter for number of splits: " + desiredSplits);
             } else {
                 this.numSplits = desiredSplits;
             }
@@ -182,10 +180,8 @@ public abstract class FileInputFormat<OT> implements InputFormat<OT, FileInputSp
         if (minSplitSize != -1) {
             if (minSplitSize < 0) {
                 this.minSplitSize = 0;
-                if (LOG.isWarnEnabled()) {
-                    LOG.warn("Ignoring invalid parameter for minimal split size (requires a positive value): "
-                            + minSplitSize);
-                }
+                LOG.warn("Ignoring invalid parameter for minimal split size (requires a positive value): "
+                        + minSplitSize);
             } else {
                 this.minSplitSize = minSplitSize;
             }
@@ -195,12 +191,10 @@ public abstract class FileInputFormat<OT> implements InputFormat<OT, FileInputSp
         if (openTimeout != -1) {
             if (openTimeout < 0) {
                 this.openTimeout = DEFAULT_OPENING_TIMEOUT;
-                if (LOG.isWarnEnabled()) {
-                    LOG.warn(
-                            "Ignoring invalid parameter for stream opening timeout (requires a positive value or "
-                                    + "zero=infinite): "
-                                    + openTimeout);
-                }
+                LOG.warn(
+                        "Ignoring invalid parameter for stream opening timeout (requires a positive value or "
+                                + "zero=infinite): "
+                                + openTimeout);
             } else if (openTimeout == 0) {
                 this.openTimeout = Long.MAX_VALUE;
             } else {
@@ -220,15 +214,11 @@ public abstract class FileInputFormat<OT> implements InputFormat<OT, FileInputSp
             FileSystem fileSystem = FileSystem.get(path.toUri());
             return getFileStatus(cachedFileStats, filePath, fileSystem, new ArrayList<>(1));
         } catch (IOException ioex) {
-            if (LOG.isWarnEnabled()) {
-                LOG.warn("Could not determine statistics for file '" + this.filePath + "' due to an io error: "
-                        + ioex.getMessage());
-            }
+            LOG.warn("Could not determine statistics for file '" + this.filePath + "' due to an io error: "
+                    + ioex.getMessage());
         } catch (Throwable t) {
-            if (LOG.isErrorEnabled()) {
-                LOG.error("Unexpected problen while getting the file statistics for file '" + this.filePath + "': "
-                        + t.getMessage(), t);
-            }
+            LOG.error("Unexpected problen while getting the file statistics for file '" + this.filePath + "': "
+                    + t.getMessage(), t);
         }
         // no statistics available
         return null;
@@ -375,6 +365,10 @@ public abstract class FileInputFormat<OT> implements InputFormat<OT, FileInputSp
 
     @Override
     public void open(FileInputSplit split) throws IOException {
+        this.splitStart = split.getStart();
+        this.splitLength = split.getLength();
+        LOG.debug("Opening input split " + split.getPath() + " [" + this.splitStart + "," + this.splitLength + "]");
+
 
     }
 
@@ -426,6 +420,65 @@ public abstract class FileInputFormat<OT> implements InputFormat<OT, FileInputSp
         @Override
         public String toString() {
             return "size=" + this.fileSize + ", recWidth=" + this.avgBytesPerRecord + ", modAt=" + this.fileModTime;
+        }
+    }
+
+    public static class InputSplitOpenThread extends Thread {
+
+        private FileInputSplit split;
+
+        private long timeout;
+
+        private volatile FSDataInputStream fdis;
+
+        private volatile Throwable error;
+
+        private volatile boolean aborted;
+
+        public InputSplitOpenThread(FileInputSplit split, long timeout) {
+            super("Transient InputSplit Opener");
+            this.split = split;
+            this.timeout = timeout;
+        }
+
+        @Override
+        public void run() {
+            try {
+                FileSystem fs = FileSystem.get(split.getPath().toUri());
+                fdis = fs.open(split.getPath());
+                if(this.aborted){
+                    final FSDataInputStream fdis = this.fdis;
+                    this.fdis = null;
+                    fdis.close();
+                }
+            } catch (Throwable t) {
+                this.error = error;
+            }
+        }
+
+        public FSDataInputStream waitForCompletion() throws InterruptedException {
+            long start = System.currentTimeMillis();
+            long remaining = timeout;
+            try {
+                this.join(remaining);
+            } catch (InterruptedException e) {
+                abortWait();
+                throw e;
+            }
+            return this.fdis;
+        }
+
+        private void abortWait() {
+            this.aborted = true;
+            FSDataInputStream stream = fdis;
+            fdis = null;
+            if(stream != null){
+                try {
+                    stream.close();
+                } catch (IOException e) {
+
+                }
+            }
         }
     }
 }
