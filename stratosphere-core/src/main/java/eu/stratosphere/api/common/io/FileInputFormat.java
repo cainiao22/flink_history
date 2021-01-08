@@ -369,7 +369,23 @@ public abstract class FileInputFormat<OT> implements InputFormat<OT, FileInputSp
         this.splitLength = split.getLength();
         LOG.debug("Opening input split " + split.getPath() + " [" + this.splitStart + "," + this.splitLength + "]");
 
+        InputSplitOpenThread thread = new InputSplitOpenThread(split, this.openTimeout);
+        thread.start();
 
+        try {
+            this.stream = thread.waitForCompletion();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        this.stream.seek(this.splitStart);
+    }
+
+    @Override
+    public void close() throws IOException {
+        if(this.stream != null){
+            this.stream.close();
+            this.stream = null;
+        }
     }
 
     public static class FileBaseStatistics implements BaseStatistics {
@@ -446,7 +462,7 @@ public abstract class FileInputFormat<OT> implements InputFormat<OT, FileInputSp
             try {
                 FileSystem fs = FileSystem.get(split.getPath().toUri());
                 fdis = fs.open(split.getPath());
-                if(this.aborted){
+                if (this.aborted) {
                     final FSDataInputStream fdis = this.fdis;
                     this.fdis = null;
                     fdis.close();
@@ -472,7 +488,7 @@ public abstract class FileInputFormat<OT> implements InputFormat<OT, FileInputSp
             this.aborted = true;
             FSDataInputStream stream = fdis;
             fdis = null;
-            if(stream != null){
+            if (stream != null) {
                 try {
                     stream.close();
                 } catch (IOException e) {

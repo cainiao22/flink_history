@@ -20,10 +20,12 @@ public abstract class CoGroupFuncction extends AbstractFunction implements Gener
     public abstract void coGroup(Iterator<Record> records1, Iterator<Record> records2, Collector<Record> out) throws Exception;
 
 
+    @Override
     public void combineFirst(Iterator<Record> records, Collector<Record> collector){
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void combineSecond(Iterator<Record> records, Collector<Record> collector){
         throw new UnsupportedOperationException();
     }

@@ -27,6 +27,21 @@ public final class GlobalConfiguration {
         return get().getLongInternal(key, defaultValue);
     }
 
+    public static int getInteger(String key, final int defaultValue) {
+        return get().getIntegerInternal(key, defaultValue);
+    }
+
+    private Integer getIntegerInternal(String key, int defaultValue){
+        int retVal = defaultValue;
+        synchronized (confData){
+            if(confData.containsKey(key)){
+                retVal = Integer.parseInt(confData.get(key));
+            }
+        }
+
+        return retVal;
+    }
+
     private long getLongInternal(String key, long defaultValue){
         long retVal = defaultValue;
         synchronized (confData){
