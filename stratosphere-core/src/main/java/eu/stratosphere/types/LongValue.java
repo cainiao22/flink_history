@@ -63,8 +63,9 @@ public class LongValue implements NormalizableKey, CopyableValue<LongValue> {
 
     @Override
     public int compareTo(Key o) {
-        if (!(o instanceof LongValue))
+        if (!(o instanceof LongValue)) {
             throw new ClassCastException("Cannot compare " + o.getClass().getName() + " to N_Integer!");
+        }
 
         final long other = ((LongValue) o).value;
 

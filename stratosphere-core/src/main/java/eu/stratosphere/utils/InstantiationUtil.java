@@ -100,4 +100,5 @@ public class InstantiationUtil {
     public static boolean isPublic(Class<?> clazz) {
         return Modifier.isPublic(clazz.getModifiers());
     }
+
 }
